@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: is the request from a signed-in user?
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: fetch the caller's role from Firestore
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isManager() { return isAuth() && getRole() in ['manager', 'owner']; }
+    function isSupervisorOrAbove() { return isAuth() && getRole() in ['administration', 'manager', 'owner']; }
+    function isQCOrAbove() { return isAuth() && getRole() in ['administration', 'manager', 'owner']; }
+    function isWorkerOrAbove() { return isAuth() && getRole() in ['worker', 'administration', 'manager', 'owner']; }
+
+    // Users — own record always readable; managers can list all
+    match /users/{uid} {
+      allow read: if isAuth() && (request.auth.uid == uid || isManager());
+      allow list: if isManager();
+      allow create: if isAuth() && request.auth.uid == uid;
+      allow update, delete: if isManager();
+    }
+
+    // Carts — all workers can read/create/update
+    match /carts/{cartId} {
+      allow read: if isWorkerOrAbove();
+      allow create: if isWorkerOrAbove();
+      allow update: if isWorkerOrAbove();
+      allow delete: if isManager();
+    }
+
+    // Inventory — BOM deductions run via Cloud Function (admin SDK, bypasses rules).
+    // Clients: managers can manually adjust quantities; all workers can read.
+    match /inventory/{itemId} {
+      allow read: if isWorkerOrAbove();
+      allow update: if isManager();
+      allow create, delete: if isManager();
+    }
+
+    // Dealers — all can read; managers manage
+    match /dealers/{dealerId} {
+      allow read: if isWorkerOrAbove();
+      allow write: if isManager();
+    }
+
+    // Scrap log — all workers can log and read; managers can edit/delete
+    match /scrapLog/{entryId} {
+      allow read: if isWorkerOrAbove();
+      allow create: if isWorkerOrAbove();
+      allow update, delete: if isManager();
+    }
+
+    // Audit log — supervisors+ read; workers can create entries.
+    // Inventory deduction entries are written by Cloud Function (admin SDK).
+    match /auditLog/{entryId} {
+      allow read: if isSupervisorOrAbove();
+      allow create: if isWorkerOrAbove();
+      allow update, delete: if false;
+    }
+
+    // Settings — all read; supervisors+ write
+    match /settings/{doc} {
+      allow read: if isWorkerOrAbove();
+      allow write: if isSupervisorOrAbove();
+    }
+
+    // Time records — workers read/create own; managers read/write all
+    match /timeRecords/{recordId} {
+      allow read: if isWorkerOrAbove();
+      allow create: if isWorkerOrAbove();
+      allow update: if isManager() ||
+        (isWorkerOrAbove() && resource.data.userId == request.auth.uid);
+      allow delete: if isManager();
+    }
+
+    // Clock sessions — one doc per user; workers manage own; managers read all
+    match /clockSessions/{userId} {
+      allow read: if isWorkerOrAbove();
+      allow write: if isManager() || request.auth.uid == userId;
+    }
+
+    // Audit flags — managers only
+    match /auditFlags/{flagId} {
+      allow read, write: if isManager();
+    }
+
+    // Holidays — all workers read; managers write
+    match /holidays/{holidayId} {
+      allow read: if isWorkerOrAbove();
+      allow write: if isManager();
+    }
+  }
+}

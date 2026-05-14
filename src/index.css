@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+@theme {
+  /* V-Carts brand colors */
+  --color-vc-bg:          #f8fafc;
+  --color-vc-surface:     #ffffff;
+  --color-vc-card:        #eff6ff;
+  --color-vc-border:      rgba(37, 99, 235, 0.12);
+  --color-vc-green:       #16a34a;
+  --color-vc-green-dim:   rgba(22, 163, 74, 0.12);
+  --color-vc-green-glow:  rgba(22, 163, 74, 0.22);
+  --color-vc-red:         #ef4444;
+  --color-vc-red-dim:     rgba(239, 68, 68, 0.12);
+  --color-vc-orange:      #f59e0b;
+  --color-vc-orange-dim:  rgba(245, 158, 11, 0.12);
+  --color-vc-text:        #0f172a;
+  --color-vc-muted:       #64748b;
+  --color-vc-subtle:      #cbd5e1;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #30363d transparent;
+}
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes ticker {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(-100%); }
+}
+
+/* Modal — scale + fade */
+@keyframes scaleInModal {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+/* Backdrop fade */
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Sidebar slide in from left */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Bottom nav slide up */
+@keyframes slideUpNav {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Toast slide in from bottom */
+@keyframes slideInToast {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* Toast slide out */
+@keyframes slideOutToast {
+  from { opacity: 1; transform: translateY(0) scale(1); max-height: 80px; }
+  to   { opacity: 0; transform: translateY(8px) scale(0.96); max-height: 0; }
+}
+
+/* Tab press ripple */
+@keyframes tabPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+
+.animate-fade-in-up    { animation: fadeInUp      0.25s ease-out both; }
+.animate-scale-in      { animation: scaleInModal  0.22s ease-out both; }
+.animate-backdrop      { animation: fadeInBackdrop 0.2s ease-out both; }
+.animate-slide-in-left { animation: slideInLeft   0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.animate-slide-up-nav  { animation: slideUpNav    0.3s  cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.animate-toast-in      { animation: slideInToast  0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.animate-ticker        { animation: ticker 30s linear infinite; }
+
+/* Status dot */
+.status-dot-green {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse-green 2s infinite;
+}
+
+/* Focus ring system — replaces outline-none everywhere */
+.focus-ring:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* Active press feedback for tappable elements */
+.press-active {
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+.press-active:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}

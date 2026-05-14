@@ -1,0 +1,45 @@
+{
+  "name": "vcarts-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsx --env-file=.env src/cli.tsx",
+    "start:headless": "tsx --env-file=.env src/headless.ts",
+    "dev": "vite --host 0.0.0.0",
+    "web": "vite",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": "20.x"
+  },
+  "type": "module",
+  "dependencies": {
+    "@openrouter/sdk": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.0",
+    "@tailwindcss/vite": "^4.2.2",
+    "@vitejs/plugin-react": "^6.0.1",
+    "docx": "^9.6.1",
+    "eventemitter3": "^5.0.4",
+    "firebase": "^12.11.0",
+    "ink": "^6.8.0",
+    "lucide-react": "^1.7.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.2",
+    "tailwindcss": "^4.2.2",
+    "vite": "^8.0.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "puppeteer": "^24.40.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
