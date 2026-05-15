@@ -12,6 +12,7 @@ function useIsMobile() {
 
   return isMobile;
 }
+
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -22,19 +23,19 @@ import AppShell from './components/layout/AppShell';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Production = lazy(() => import('./pages/Production'));
-const Inventory = lazy(() => import('./pages/Inventory'));
-const Employees = lazy(() => import('./pages/Employees'));
-const Payroll = lazy(() => import('./pages/Payroll'));
-const ScrapLog = lazy(() => import('./pages/ScrapLog'));
-const Reports = lazy(() => import('./pages/Reports'));
-const Settings = lazy(() => import('./pages/Settings'));
-const Carts = lazy(() => import('./pages/Carts'));
-const MyProfile = lazy(() => import('./pages/MyProfile'));
-const TimeAuditor = lazy(() => import('./pages/TimeAuditor'));
+const Dashboard     = lazy(() => import('./pages/Dashboard'));
+const Production    = lazy(() => import('./pages/Production'));
+const Inventory     = lazy(() => import('./pages/Inventory'));
+const Employees     = lazy(() => import('./pages/Employees'));
+const Payroll       = lazy(() => import('./pages/Payroll'));
+const ScrapLog      = lazy(() => import('./pages/ScrapLog'));
+const Reports       = lazy(() => import('./pages/Reports'));
+const Settings      = lazy(() => import('./pages/Settings'));
+const Carts         = lazy(() => import('./pages/Carts'));
+const MyProfile     = lazy(() => import('./pages/MyProfile'));
+const TimeAuditor   = lazy(() => import('./pages/TimeAuditor'));
 const PayCalculator = lazy(() => import('./pages/PayCalculator'));
-const CartCommand = lazy(() => import('./pages/CartCommand'));
+const CartCommand   = lazy(() => import('./pages/CartCommand'));
 
 function PageLoader() {
   return (
@@ -44,7 +45,7 @@ function PageLoader() {
   );
 }
 
-// ─── Auth Guard ───────────────────────────────────────────────────────────────
+// ─── Auth Guards ──────────────────────────────────────────────────────────────
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -61,9 +62,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
               <path d="M4 6L13 26H16H19L28 6H23L16 20L9 6H4Z" fill="white" />
             </svg>
           </div>
-          <p className="text-sm" style={{ color: '#7d8590' }}>
-            Loading…
-          </p>
+          <p className="text-sm" style={{ color: '#7d8590' }}>Loading…</p>
         </div>
       </div>
     );
@@ -89,41 +88,48 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public */}
+      {/* Public — no auth required */}
       <Route
         path="/login"
-        element={user ? <Navigate to="/dashboard" replace /> : <LoginScreen />}
+        element={user ? <Navigate to="/cart-command" replace /> : <LoginScreen />}
       />
 
-      {/* Protected */}
+      {/* Public — CartCommand loads immediately without login */}
+      <Route element={<AppShell />}>
+        <Route index element={<Navigate to="/cart-command" replace />} />
+        <Route
+          path="/cart-command"
+          element={<Suspense fallback={<PageLoader />}><CartCommand /></Suspense>}
+        />
+      </Route>
+
+      {/* Protected — all other pages require auth */}
       <Route element={<RequireAuth><AppShell /></RequireAuth>}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
-        <Route path="/cart-command" element={<Suspense fallback={<PageLoader />}><CartCommand /></Suspense>} />
-        <Route path="/production" element={<Suspense fallback={<PageLoader />}><Production /></Suspense>} />
-        <Route path="/my-profile" element={<Suspense fallback={<PageLoader />}><MyProfile /></Suspense>} />
-        <Route path="/carts" element={<Suspense fallback={<PageLoader />}><Carts /></Suspense>} />
-        <Route path="/scrap" element={<Suspense fallback={<PageLoader />}><ScrapLog /></Suspense>} />
+        <Route path="/dashboard"      element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
+        <Route path="/production"     element={<Suspense fallback={<PageLoader />}><Production /></Suspense>} />
+        <Route path="/my-profile"     element={<Suspense fallback={<PageLoader />}><MyProfile /></Suspense>} />
+        <Route path="/carts"          element={<Suspense fallback={<PageLoader />}><Carts /></Suspense>} />
+        <Route path="/scrap"          element={<Suspense fallback={<PageLoader />}><ScrapLog /></Suspense>} />
         <Route path="/pay-calculator" element={<Suspense fallback={<PageLoader />}><PayCalculator /></Suspense>} />
 
         {/* Supervisor + Manager */}
         <Route path="/inventory" element={<RequireSupervisor><Suspense fallback={<PageLoader />}><Inventory /></Suspense></RequireSupervisor>} />
-        <Route path="/reports" element={<RequireSupervisor><Suspense fallback={<PageLoader />}><Reports /></Suspense></RequireSupervisor>} />
-        <Route path="/settings" element={<RequireSupervisor><Suspense fallback={<PageLoader />}><Settings /></Suspense></RequireSupervisor>} />
+        <Route path="/reports"   element={<RequireSupervisor><Suspense fallback={<PageLoader />}><Reports /></Suspense></RequireSupervisor>} />
+        <Route path="/settings"  element={<RequireSupervisor><Suspense fallback={<PageLoader />}><Settings /></Suspense></RequireSupervisor>} />
 
         {/* Manager only */}
-        <Route path="/employees" element={<RequireManager><Suspense fallback={<PageLoader />}><Employees /></Suspense></RequireManager>} />
-        <Route path="/payroll" element={<RequireManager><Suspense fallback={<PageLoader />}><Payroll /></Suspense></RequireManager>} />
+        <Route path="/employees"    element={<RequireManager><Suspense fallback={<PageLoader />}><Employees /></Suspense></RequireManager>} />
+        <Route path="/payroll"      element={<RequireManager><Suspense fallback={<PageLoader />}><Payroll /></Suspense></RequireManager>} />
         <Route path="/time-auditor" element={<RequireManager><Suspense fallback={<PageLoader />}><TimeAuditor /></Suspense></RequireManager>} />
       </Route>
 
       {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/cart-command" replace />} />
     </Routes>
   );
 }
 
-// ─── Root App ────────────────────────────────────────────────────────────────
+// ─── Root App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
   const isMobile = useIsMobile();

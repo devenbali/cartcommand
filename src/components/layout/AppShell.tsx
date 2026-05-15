@@ -45,17 +45,31 @@ export default function AppShell() {
   const isOnline = useOnlineStatus();
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [cartCommandMode, setCartCommandMode] = useState<CartCommandMode>(
-    () => (localStorage.getItem('cartCommandMode') as CartCommandMode) || 'Manager',
-  );
+
+  // Default to 'Manager' if nothing is stored — no access gate screen needed
+  const [cartCommandMode, setCartCommandMode] = useState<CartCommandMode>(() => {
+    const stored = localStorage.getItem('cartCommandMode') as CartCommandMode | null;
+    if (!stored) {
+      localStorage.setItem('cartCommandMode', 'Manager');
+      return 'Manager';
+    }
+    return stored;
+  });
 
   const location = useLocation();
   const navigate = useNavigate();
 
+  // ── Auto-navigate to /cart-command on first load ──────────────────────────
+  useEffect(() => {
+    if (location.pathname === '/' || location.pathname === '') {
+      navigate('/cart-command', { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Sync mode from localStorage / custom events ───────────────────────────
   const syncMode = useCallback(() => {
-    setCartCommandMode(
-      (localStorage.getItem('cartCommandMode') as CartCommandMode) || 'Manager',
-    );
+    const stored = localStorage.getItem('cartCommandMode') as CartCommandMode | null;
+    setCartCommandMode(stored || 'Manager');
   }, []);
 
   useEffect(() => {
@@ -71,6 +85,14 @@ export default function AppShell() {
       window.removeEventListener('focus', syncMode);
     };
   }, [syncMode]);
+
+  // ── Listen for the Pro-Mode sign-in button event from CartCommand ─────────
+  // Navigates to /login so the user can sign in via the standard login route.
+  useEffect(() => {
+    const handleOpenLogin = () => navigate('/login');
+    window.addEventListener('openVCartsLogin', handleOpenLogin);
+    return () => window.removeEventListener('openVCartsLogin', handleOpenLogin);
+  }, [navigate]);
 
   useEffect(() => {
     setMobileSidebarOpen(false);
@@ -119,40 +141,40 @@ export default function AppShell() {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-{/* Mobile top bar */}
-{!hideShell && (
-  <div
-    className="flex md:hidden items-center justify-between px-4 py-3"
-    style={{
-      background: '#0d1117',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
-    }}
-  >
-    {/* Title (centered properly) */}
-    <div className="flex-1 flex justify-center">
-      <span
-        className="text-sm font-bold"
-        style={{
-          fontFamily: 'Outfit, Inter, sans-serif',
-          color: '#e6edf3',
-        }}
-      >
-        {pageTitle}
-      </span>
-    </div>
+        {/* Mobile top bar */}
+        {!hideShell && (
+          <div
+            className="flex md:hidden items-center justify-between px-4 py-3"
+            style={{
+              background: '#0d1117',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            {/* Title (centered properly) */}
+            <div className="flex-1 flex justify-center">
+              <span
+                className="text-sm font-bold"
+                style={{
+                  fontFamily: 'Outfit, Inter, sans-serif',
+                  color: '#e6edf3',
+                }}
+              >
+                {pageTitle}
+              </span>
+            </div>
 
-    {/* Menu button (absolute-right feel without layout shift) */}
-    <div className="absolute right-4">
-      <button
-        onClick={() => setMobileSidebarOpen(true)}
-        className="px-3 py-2 rounded-xl"
-        style={{ background: '#1c2333', color: '#7d8590' }}
-      >
-        <Menu size={16} />
-      </button>
-    </div>
-  </div>
-)}
+            {/* Menu button (absolute-right feel without layout shift) */}
+            <div className="absolute right-4">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="px-3 py-2 rounded-xl"
+                style={{ background: '#1c2333', color: '#7d8590' }}
+              >
+                <Menu size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Offline banner */}
         {!isOnline && (
@@ -165,7 +187,7 @@ export default function AppShell() {
             }}
           >
             <WifiOff size={13} />
-            No internet connection — changes will sync when you’re back online
+            No internet connection — changes will sync when you're back online
           </div>
         )}
 
@@ -216,6 +238,7 @@ export default function AppShell() {
       {isManager && (
         <AIAssistant inventory={items} carts={carts} users={users} dealers={dealers} />
       )}
+
     </div>
   );
 }
