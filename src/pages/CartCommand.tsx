@@ -887,7 +887,7 @@ export default function CartCommand() {
       height: "100%",
     }}
   >
-    <img
+     <img
       src={VCARTS_LOGO_BASE64}
       alt="VCarts"
       style={{
@@ -896,7 +896,7 @@ export default function CartCommand() {
         objectFit: "contain",
         filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.25)) contrast(1.08) saturate(1.1)",
         imageRendering: "auto",
-      }}
+      }} 
     />
   </div>
 )}
