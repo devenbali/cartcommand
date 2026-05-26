@@ -100,7 +100,7 @@ export default function AppShell() {
 
   const pageTitle = PAGE_TITLES[location.pathname] ?? 'V-Carts';
   const isCartCommand = location.pathname === '/cart-command';
-  const hideShell = isCartCommand && cartCommandMode !== 'Pro';
+  const hideShell = isCartCommand;
 
   const lowStockCount = isManager ? lowStock.length : 0;
 

@@ -541,19 +541,15 @@ export default function CartCommand() {
     return localStorage.getItem("cartCommandMode")||"Manager";
   });
   const visibleTabs=appMode==="Pro"?FULL_TABS:appMode==="Warehouse"?WAREHOUSE_TABS:SIMPLE_TABS;
-  const [activeTabName,setActiveTabName]=useState(()=>visibleTabs[0]);
+  const [activeTabName,setActiveTabName]=useState(SIMPLE_TABS[0]);
 
   const showToast=(msg,color="#10b981")=>{setToast({msg,color});setTimeout(()=>setToast(null),3500);};
 
   // When mode changes, preserve the active tab if it exists in the new mode
   useEffect(()=>{
     const idx=visibleTabs.indexOf(activeTabName);
-    if(idx>=0){
-      setTab(idx);
-    } else {
-      setTab(0);
-      setActiveTabName(visibleTabs[0]);
-    }
+    setTab(idx>=0?idx:0);
+    if(idx<0) setActiveTabName(visibleTabs[0]);
   },[appMode]);
 
   const renderActiveTab=()=>{
@@ -851,7 +847,7 @@ export default function CartCommand() {
   );
 
   return (
-    <div style={{fontFamily:"Inter, sans-serif",background:"#f4f6fb",minHeight:"100%",color:"#0a3584",position:"relative"}}>
+    <div style={{fontFamily:"Inter, sans-serif",background:"#f4f6fb",minHeight:"100vh",color:"#0a3584",position:"relative"}}>
 
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:TOP_BAR_BLUE,padding:"0 18px",height:110,position:"relative",overflow:"hidden"}}>
   <img
