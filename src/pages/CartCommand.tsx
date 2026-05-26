@@ -851,7 +851,7 @@ export default function CartCommand() {
   );
 
   return (
-    <div style={{fontFamily:"Inter, sans-serif",background:"#f4f6fb",minHeight:"100vh",color:"#0a3584",position:"relative"}}>
+    <div style={{fontFamily:"Inter, sans-serif",background:"#f4f6fb",minHeight:"100%",color:"#0a3584",position:"relative"}}>
 
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:TOP_BAR_BLUE,padding:"0 18px",height:110,position:"relative",overflow:"hidden"}}>
   <img
