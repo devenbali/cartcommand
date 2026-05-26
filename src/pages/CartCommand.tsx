@@ -6,7 +6,6 @@ import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import ExcelJS from 'exceljs';
 
 const SUPABASE_URL = "https://kxchnecpmbmvgjcrvadp.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4Y2huZWNwbWJtdmdqY3J2YWRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzUxNDIsImV4cCI6MjA5MTc1MTE0Mn0.vFHxRvY5opKluOyueMfoo-K67jxeUiHx4WtZ4Ha4HTM";
@@ -1680,6 +1679,7 @@ function FinishedTab({finished,addFinishedCarts,updateFinishedCart,deleteFinishe
   );
 }
 async function exportOpenOrdersToExcel(orders: any[]) {
+  const ExcelJS = (await import('exceljs')).default;
   // ── Pull VINs from all production Firebase statuses ──────────────────────
   const [readyToShip, active, inQueue, qcPassed] = await Promise.all([
     fetchReadyToShipCarts(),
