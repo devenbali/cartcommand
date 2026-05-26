@@ -541,15 +541,19 @@ export default function CartCommand() {
     return localStorage.getItem("cartCommandMode")||"Manager";
   });
   const visibleTabs=appMode==="Pro"?FULL_TABS:appMode==="Warehouse"?WAREHOUSE_TABS:SIMPLE_TABS;
-  const [activeTabName,setActiveTabName]=useState(SIMPLE_TABS[0]);
+  const [activeTabName,setActiveTabName]=useState(()=>visibleTabs[0]);
 
   const showToast=(msg,color="#10b981")=>{setToast({msg,color});setTimeout(()=>setToast(null),3500);};
 
   // When mode changes, preserve the active tab if it exists in the new mode
   useEffect(()=>{
     const idx=visibleTabs.indexOf(activeTabName);
-    setTab(idx>=0?idx:0);
-    if(idx<0) setActiveTabName(visibleTabs[0]);
+    if(idx>=0){
+      setTab(idx);
+    } else {
+      setTab(0);
+      setActiveTabName(visibleTabs[0]);
+    }
   },[appMode]);
 
   const renderActiveTab=()=>{
