@@ -24,6 +24,8 @@
     "@vitejs/plugin-react": "^6.0.1",
     "docx": "^9.6.1",
     "eventemitter3": "^5.0.4",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
     "firebase": "^12.11.0",
     "ink": "^6.8.0",
     "lucide-react": "^1.7.0",
@@ -32,9 +34,11 @@
     "react-router-dom": "^7.13.2",
     "tailwindcss": "^4.2.2",
     "vite": "^8.0.3",
+    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
