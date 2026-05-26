@@ -4,6 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExcelJS from 'exceljs';
 
 const SUPABASE_URL = "https://kxchnecpmbmvgjcrvadp.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4Y2huZWNwbWJtdmdqY3J2YWRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzUxNDIsImV4cCI6MjA5MTc1MTE0Mn0.vFHxRvY5opKluOyueMfoo-K67jxeUiHx4WtZ4Ha4HTM";
@@ -80,7 +83,7 @@ async function fetchQCPassedCarts() {
 // ─── Color / model mapping ─────────────────────────────────────────────────────
 const SHELL_TO_BODY = { "Red":"Red","White":"White","Blue":"Blue","Black":"Black","Burgundy":"Burgundy","Sky Blue":"Sky Blue","Matte Grey":"Matte Grey","Matte Gray":"Matte Grey","Silver":"Silver" };
 const SEAT_MAP = { "Black":"Black","Brown":"Brown","Grey":"Grey","Gray":"Grey" };
-const MODEL_NAME_MAP = { "The Golf":"Golf","THE GOLF":"Golf","the golf":"Golf","LIFTED 4":"Cruiser","Lifted 4":"Cruiser","lifted 4":"Cruiser","LIFTED 6":"Limo","LIFTED6":"Limo","Lifted 6":"Limo","lifted 6":"Limo","ECO 4":"ECO4","Eco 4":"ECO4","eco 4":"ECO4","ECO 6":"ECO6","Eco 6":"ECO6","eco 6":"ECO6","ECO2":"Golf","Eco2":"Golf","eco2":"Golf","ECO 2":"Golf","Eco 2":"Golf","eco 2":"Golf" };
+const MODEL_NAME_MAP = { "The Golf":"Golf","THE GOLF":"Golf","the golf":"Golf","LIFTED 4":"Cruiser","Lifted 4":"Cruiser","lifted 4":"Cruiser","LIFTED4":"Cruiser","Lifted4":"Cruiser","lifted4":"Cruiser","LIFTED 6":"Limo","Lifted 6":"Limo","lifted 6":"Limo","LIFTED6":"Limo","Lifted6":"Limo","lifted6":"Limo","ECO 4":"ECO4","Eco 4":"ECO4","eco 4":"ECO4","ECO 6":"ECO6","Eco 6":"ECO6","eco 6":"ECO6","ECO2":"Golf","Eco2":"Golf","eco2":"Golf","ECO 2":"Golf","Eco 2":"Golf","eco 2":"Golf" };
 
 const MODELS = ["Golf","ECO4","ECO6","Cruiser","Limo","F4","F4 LR"];
 const BODY_COLORS = ["Red","White","Blue","Black","Burgundy","Sky Blue","Matte Grey","Silver"];
@@ -307,30 +310,6 @@ function ColorAvailWheel({count,maxCount,size=34}) {
       <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:na?7:8,fontWeight:800,color:na?"#94a3b8":color}}>
         {na ? "N/A" : count}
       </div>
-      {appMode === "Pro" && (
-        <button
-          onClick={() =>
-            window.dispatchEvent(new CustomEvent("openVCartsLogin"))
-          }
-          style={{
-            position: "fixed",
-            bottom: 20,
-            left: 20,
-            zIndex: 50,
-            background: "#000",
-            color: "#fff",
-            border: "1px solid rgba(255,255,255,0.2)",
-            borderRadius: 10,
-            padding: "8px 16px",
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          Sign In
-        </button>
-      )}
-
     </div>
   );
 }
@@ -362,7 +341,7 @@ function FinishedBodyColorWheel({finished,model}) {
     );
   }
   return (
-    <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #dde3f0",borderRadius:10,padding:"7px 10px",flexWrap:"wrap",position:"relative",zIndex:5,opacity:1,visibility:"visible"}}>
+    <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #dde3f0",borderRadius:10,padding:"7px 10px",flexWrap:"wrap"}}>
       <span style={{fontSize:11,fontWeight:800,color:"#6b7280",textTransform:"uppercase",marginRight:2}}>Finished Colors</span>
       {counts.map(({color,count})=>(
         <div key={color} style={{display:"flex",alignItems:"center",gap:4,opacity:count?1:0.35}} title={`${color}: ${count}`}>
@@ -527,7 +506,9 @@ function fmtWeekLabel(sun,sat) {
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function CartCommand() {
-  const [unlocked, setUnlocked] = useState(true);
+  const [unlocked, setUnlocked] = useState(() => {
+    return localStorage.getItem("vcartsAccessGranted") === "true";
+  });
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [usernameInput, setUsernameInput] = useState("");
@@ -759,7 +740,7 @@ export default function CartCommand() {
     setOrders(prev=>prev.map(x=>x.id===id?{...x,status:to}:x));
   };
 
-  if (false && !unlocked) {
+  if (!unlocked) {
     return (
       <div
         style={{
@@ -857,7 +838,8 @@ export default function CartCommand() {
       </div>
     );
   }
- if(loading) return (
+
+  if(loading) return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontFamily:"'Segoe UI',sans-serif",color:"#6b7280",flexDirection:"column",gap:12,background:"#f4f6fb"}}>
       <div style={{fontSize:36}}>🏌️</div>
       <div style={{fontWeight:700,fontSize:16,color:"#0a3584"}}>Cart Command</div>
@@ -875,19 +857,8 @@ export default function CartCommand() {
     style={{height:"100%",width:"auto",objectFit:"contain"}}
   />
 
-{typeof window !== "undefined" && window.innerWidth > 768 && (
-  <div
-    style={{
-      position: "absolute",
-      left: "50%",
-      transform: "translateX(-50%)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "100%",
-    }}
-  >
-     <img
+  <div style={{position:"absolute",left:"50%",transform:"translateX(-50%)"}}>
+      <img
       src={VCARTS_LOGO_BASE64}
       alt="VCarts"
       style={{
@@ -896,11 +867,9 @@ export default function CartCommand() {
         objectFit: "contain",
         filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.25)) contrast(1.08) saturate(1.1)",
         imageRendering: "auto",
-      }} 
+      }}
     />
   </div>
-)}
-
 
         <div style={{fontWeight:800,fontSize:26,letterSpacing:0.3,marginLeft:12,color:"#ffffff",whiteSpace:"nowrap",fontStyle:"italic",fontFamily:"Georgia, serif"}}>Cart Command — {appMode}</div>
         {username && <div style={{marginLeft:"auto",fontSize:13,color:"rgba(255,255,255,0.85)",fontWeight:600,whiteSpace:"nowrap",paddingRight:8}}>Welcome {username}!</div>}
@@ -1710,7 +1679,203 @@ function FinishedTab({finished,addFinishedCarts,updateFinishedCart,deleteFinishe
     </div>
   );
 }
+async function exportOpenOrdersToExcel(orders: any[]) {
+  // ── Pull VINs from all production Firebase statuses ──────────────────────
+  const [readyToShip, active, inQueue, qcPassed] = await Promise.all([
+    fetchReadyToShipCarts(),
+    fetchActiveBuildsCarts(),
+    fetchInQCQueueCarts(),
+    fetchQCPassedCarts(),
+  ]);
+  const allProductionCarts = [...readyToShip, ...active, ...inQueue, ...qcPassed];
 
+  // Build VIN lookup: dealer|model|color → vin
+  const vinLookup = new Map();
+  allProductionCarts.forEach((c) => {
+    const key1 = `${c.dealerName||""}|${c.model||""}|${c.shellColor||""}`.toLowerCase();
+    const key2 = `${c.dealerName||""}|${c.model||""}|${c.body||""}`.toLowerCase();
+    if (c.vin) { vinLookup.set(key1, c.vin); vinLookup.set(key2, c.vin); }
+  });
+
+  // ── Group flat orders array by orderGroupId ───────────────────────────────
+  const openOrders = orders.filter(o => o.status === "open");
+  const groupMap: Record<string, {dealer: string; date: string; notes: string; carts: any[]}> = {};
+  openOrders.forEach(o => {
+    const gid = o.orderGroupId || o.id;
+    if (!groupMap[gid]) groupMap[gid] = { dealer: o.customer || "", date: o.date || "", notes: o.notes || "", carts: [] };
+    groupMap[gid].carts.push(o);
+  });
+  const groups = Object.values(groupMap).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+  // ── Build workbook with ExcelJS (real style support) ──────────────────────
+  const currentDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Upcoming Orders");
+
+  // Column widths
+  ws.columns = [
+    { width: 9  },   // A: Order #
+    { width: 26 },   // B: Dealer
+    { width: 15 },   // C: Cart Model
+    { width: 24 },   // D: Color
+    { width: 13 },   // E: VIN
+    { width: 8  },   // F: Total
+    { width: 22 },   // G: Est. Shipping Date
+    { width: 32 },   // H: Notes
+  ];
+
+  // ── Shared fills ─────────────────────────────────────────────────────
+  // Title row: navy
+  const navyFill   = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0A1F4E" } } as const;
+  // Header row: black
+  const blackFill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF000000" } } as const;
+  // Even orders: white; odd orders: light blue tint
+  const whiteFill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } } as const;
+  const tintFill   = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD6E4F7" } } as const;
+
+  const hairBorder = { style: "hair" as const, color: { argb: "FFCBD5E1" } };
+  const thinBorder = { style: "thin" as const, color: { argb: "FF9CB3CC" } };
+  const allHair = { top: hairBorder, bottom: hairBorder, left: hairBorder, right: hairBorder };
+  const allThin = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+
+  const applyStyle = (cell: ExcelJS.Cell, opts: {
+    bold?: boolean; sz?: number; color?: string;
+    fill?: any; hAlign?: string; vAlign?: string; border?: any;
+  }) => {
+    cell.font = { bold: opts.bold||false, size: opts.sz||10, color: { argb: opts.color||"FF1E293B" } };
+    if (opts.fill) cell.fill = opts.fill;
+    cell.alignment = {
+      horizontal: (opts.hAlign||"left") as any,
+      vertical:   (opts.vAlign||"middle") as any,
+    };
+    if (opts.border) cell.border = opts.border;
+  };
+
+  // ── Row 1: Title (navy, white bold, merged) ──────────────────────────
+  ws.addRow([`Upcoming Orders — ${currentDate}`, "", "", "", "", "", "", ""]);
+  ws.mergeCells("A1:H1");
+  applyStyle(ws.getCell("A1"), { bold: true, sz: 13, color: "FFFFFFFF", fill: navyFill, hAlign: "center", vAlign: "middle" });
+  ws.getRow(1).height = 26;
+
+  // ── Row 2: Column headers (BLACK background, white bold) ─────────────
+  const HEADERS = ["Order #", "Dealer", "Cart Model", "Color", "VIN", "Total", "Est. Shipping Date", "Notes"];
+  ws.addRow(HEADERS);
+  const headerRow = ws.getRow(2);
+  headerRow.height = 20;
+  headerRow.eachCell(cell => {
+    applyStyle(cell, { bold: true, sz: 11, color: "FFFFFFFF", fill: blackFill, hAlign: "center", vAlign: "middle", border: allThin });
+  });
+
+  // ── Data rows ────────────────────────────────────────────────────────
+  // Each order group alternates fill: even idx → white, odd idx → blue tint.
+  // Cols A, B, F, G are merged vertically for the entire group.
+  // Cols C, D, E, H get one row per cart with the same group fill.
+  // VIN (E) and Total (F) get blue text.
+
+  const blueFill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1A56DB" } } as const;
+
+  let dataRowNum = 3; // next Excel row index (1-based), starts after title + header
+
+  groups.forEach((group, idx) => {
+    const orderNum  = idx + 1;
+    const cartCount = group.carts.length;
+    const groupFill = idx % 2 === 0 ? whiteFill : tintFill;
+    const startRow  = dataRowNum;
+    const endRow    = dataRowNum + cartCount - 1;
+
+    // Write one Excel row per cart; A, B, F, G, H will be merged after
+    group.carts.forEach((cart, ci) => {
+      const body  = cart.body  || "";
+      const seat  = cart.seat  || "";
+      const model = cart.model || "";
+      const color = (body && seat) ? `${body} / ${seat}` : body || seat;
+      const vinKey = `${group.dealer}|${model}|${body}`.toLowerCase();
+      const vin   = cart.vinNew || cart.vin || vinLookup.get(vinKey) || "";
+
+      ws.addRow([
+        ci === 0 ? orderNum        : "",
+        ci === 0 ? group.dealer    : "",
+        model,
+        color,
+        vin,
+        ci === 0 ? cartCount       : "",
+        "",
+        ci === 0 ? (group.notes||"") : "",
+      ]);
+      const row = ws.lastRow!;
+      row.height = 18;
+
+      // Col A: solid blue fill, white bold text, centered
+      applyStyle(row.getCell(1), { bold: true, sz: 11, color: "FFFFFFFF", fill: blueFill, hAlign: "center", vAlign: "middle", border: allHair });
+
+      // Cols B-H: group fill
+      [2,3,4,5,6,7,8].forEach(c => {
+        applyStyle(row.getCell(c), { fill: groupFill, border: allHair, vAlign: "middle" });
+      });
+
+      // Cart Model (C)
+      applyStyle(row.getCell(3), { sz: 10, fill: groupFill, border: allHair, vAlign: "middle" });
+
+      // Color (D)
+      applyStyle(row.getCell(4), { sz: 10, fill: groupFill, border: allHair, vAlign: "middle" });
+
+      // VIN (E) — blue text, centered
+      applyStyle(row.getCell(5), { sz: 10, color: "FF1A56DB", fill: groupFill, hAlign: "center", vAlign: "middle", border: allHair });
+
+      dataRowNum++;
+    });
+
+    // ── Merge A, B, F, G, H vertically across all cart rows in this group ──
+    if (cartCount > 1) {
+      ws.mergeCells(startRow, 1, endRow, 1); // col A
+      ws.mergeCells(startRow, 2, endRow, 2); // col B
+      ws.mergeCells(startRow, 6, endRow, 6); // col F
+      ws.mergeCells(startRow, 7, endRow, 7); // col G
+      ws.mergeCells(startRow, 8, endRow, 8); // col H
+    }
+
+    // Re-style merged top cells
+    // Col A: blue fill, white bold, centered
+    applyStyle(ws.getCell(startRow, 1), { bold: true, sz: 11, color: "FFFFFFFF", fill: blueFill, hAlign: "center", vAlign: "middle", border: allThin });
+    ws.getCell(startRow, 1).value = orderNum;
+
+    // Col B: Dealer name — bold, left-aligned
+    applyStyle(ws.getCell(startRow, 2), { bold: true, sz: 11, fill: groupFill, vAlign: "middle", border: allThin });
+    ws.getCell(startRow, 2).value = group.dealer;
+
+    // Col F: Total — blue text, centered, bold
+    applyStyle(ws.getCell(startRow, 6), { bold: true, sz: 11, color: "FF1A56DB", fill: groupFill, hAlign: "center", vAlign: "middle", border: allThin });
+    ws.getCell(startRow, 6).value = cartCount;
+
+    // Col G: Est. Shipping Date
+    applyStyle(ws.getCell(startRow, 7), { fill: groupFill, border: allThin });
+    ws.getCell(startRow, 7).value = "";
+
+    // Col H: Notes
+    applyStyle(ws.getCell(startRow, 8), { fill: groupFill, border: allThin });
+    ws.getCell(startRow, 8).value = group.notes || "";
+
+    // ── Spacer row between orders (skip after last group) ────────────────
+    if (idx < groups.length - 1) {
+      ws.addRow(["", "", "", "", "", "", "", ""]);
+      const spacer = ws.lastRow!;
+      spacer.height = 6;
+      [1,2,3,4,5,6,7,8].forEach(c => {
+        spacer.getCell(c).fill = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: "FFF1F5F9" } };
+        spacer.getCell(c).border = {};
+      });
+      dataRowNum++;
+    }
+  });
+
+  // ── Write & download ─────────────────────────────────────────────────
+  const buf = await wb.xlsx.writeBuffer();
+  saveAs(
+    new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+    `upcoming-orders-${new Date().toISOString().slice(0, 10)}.xlsx`
+  );
+}
 // ─── Orders Dashboard ─────────────────────────────────────────────────────────
 function OrdersDashboard({orders,updateOrder}) {
   const [selectedDealer,setSelectedDealer]=useState("");
@@ -1946,9 +2111,12 @@ function OrdersTab({orders,finished,addOrders,updateOrder,deleteOrder,deleteOrde
       <OrdersDashboard orders={orders} updateOrder={updateOrder}/>
 
 
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
         <div style={{fontWeight:700,fontSize:15,color:"#0a3584"}}>Open Orders ({filteredOpenGroups.length})</div>
-        <Btn onClick={()=>{setAdding(a=>!a);setEditId(null);setDraftOrders([blankOrder()]);}}>{adding?"Cancel":"+ Create Order"}</Btn>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <Btn small onClick={()=>exportOpenOrdersToExcel(orders)} style={{background:"#10b981",color:"#fff"}}>📥 Export Orders</Btn>
+          <Btn onClick={()=>{setAdding(a=>!a);setEditId(null);setDraftOrders([blankOrder()]);}}>{adding?"Cancel":"+ Create Order"}</Btn>
+        </div>
       </div>
 
       {adding&&(
@@ -2390,7 +2558,10 @@ function BuildShipTab({orders,updateOrder,finished,updateFinishedCart,deleteFini
 
       {/* Open Orders */}
       <div style={{background:"#ffffff",borderRadius:14,boxShadow:"0 1px 6px rgba(10,53,132,0.08)",overflow:"hidden"}}>
-        <div style={{padding:"11px 16px",background:"#0f1829",borderBottom:"2px solid #1e3a5f"}}><span style={{fontWeight:700,color:"#1d4ed8",fontSize:13}}>📋 Open Orders — {filteredOpenGroups.length}</span></div>
+        <div style={{padding:"11px 16px",background:"#0f1829",borderBottom:"2px solid #1e3a5f",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{fontWeight:700,color:"#1d4ed8",fontSize:13}}>📋 Open Orders — {filteredOpenGroups.length}</span>
+          {filteredOpenGroups.length>0&&<Btn small onClick={()=>exportOpenOrdersToExcel(orders)} style={{background:"#10b981",color:"#fff"}}>📥 Export Orders</Btn>}
+        </div>
         <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:6}}>
           <Pager page={safeOpenPage} total={openTotalPages} count={filteredOpenGroups.length} onPage={setOpenPage}/>
           {openPageGroups.map(group=>{
